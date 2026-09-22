@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "cp -r img dist/img",
     "preview": "vite preview"
   },
   "repository": {
