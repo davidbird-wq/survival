@@ -24,6 +24,116 @@ canvas {
   image-rendering: pixelated;
 }
 
+.world-compass {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  width: 5.5rem;
+  height: 5.5rem;
+  place-items: center;
+  transform: translateX(-50%);
+  border: 1px solid rgba(244, 234, 213, 0.35);
+  border-radius: 50%;
+  background: rgba(22, 31, 35, 0.86);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.world-compass::before,
+.world-compass::after {
+  position: absolute;
+  color: rgba(244, 234, 213, 0.55);
+  font-size: 0.6rem;
+}
+
+.world-compass::before {
+  content: 'N';
+  top: 0.35rem;
+}
+
+.world-compass::after {
+  content: 'S';
+  bottom: 0.35rem;
+}
+
+.world-compass > span:first-child {
+  position: absolute;
+  bottom: -1.2rem;
+  color: #b7c5bd;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.world-compass__arrow {
+  color: #e7b85c;
+  font-size: 1.8rem;
+  line-height: 1;
+  transform-origin: center;
+}
+
+.main-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: 2rem;
+  color: #f4ead5;
+  background-color: #121b1d;
+  background-image: url('/img/bg.jpeg');
+  background-position: center;
+  background-size: cover;
+  text-align: center;
+}
+
+.main-menu h1 {
+  margin: 0;
+  color: #e7b85c;
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  letter-spacing: 0.04em;
+}
+
+.main-menu > p {
+  max-width: 34rem;
+  margin: 0.8rem 0 2rem;
+  color: #b7c5bd;
+  font-size: 1.05rem;
+}
+
+.main-menu__actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.main-menu__actions button {
+  min-width: 9rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e7b85c;
+  border-radius: 0.3rem;
+  color: #1f2933;
+  background: #e7b85c;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.main-menu__actions button:disabled {
+  border-color: rgba(244, 234, 213, 0.25);
+  color: #718078;
+  background: rgba(113, 128, 120, 0.18);
+  cursor: not-allowed;
+}
+
+.main-menu .main-menu__hint {
+  max-width: 28rem;
+  margin-top: 2rem;
+  font-size: 0.82rem;
+}
+
 .tribe-stats {
   position: fixed;
   top: 1rem;
@@ -66,4 +176,302 @@ canvas {
   color: #f4ead5;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
+}
+
+.tech-tree {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: min(19rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1rem;
+  overflow-y: auto;
+  border: 1px solid rgba(244, 234, 213, 0.3);
+  border-radius: 0.5rem;
+  background: rgba(22, 31, 35, 0.92);
+  box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.25);
+}
+
+.tech-tree h2 {
+  margin: 0;
+  color: #e7b85c;
+  font-size: 1.25rem;
+}
+
+.tech-tree__subtitle {
+  margin: 0.2rem 0 0.8rem;
+  color: #b7c5bd;
+  font-size: 0.8rem;
+}
+
+.tech-tree__nodes {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.tech-node {
+  padding: 0.7rem;
+  border: 1px solid rgba(244, 234, 213, 0.16);
+  border-radius: 0.35rem;
+  background: rgba(38, 51, 53, 0.8);
+}
+
+.tech-node h3 {
+  margin: 0;
+  color: #f4ead5;
+  font-size: 1rem;
+}
+
+.tech-node p {
+  margin: 0.25rem 0 0.6rem;
+  color: #b7c5bd;
+  font-size: 0.78rem;
+}
+
+.tech-node button {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #e7b85c;
+  border-radius: 0.25rem;
+  color: #1f2933;
+  background: #e7b85c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tech-node button:disabled {
+  border-color: rgba(244, 234, 213, 0.2);
+  color: #718078;
+  background: rgba(113, 128, 120, 0.18);
+  cursor: not-allowed;
+}
+
+.tech-node__status {
+  display: block;
+  margin-top: 0.45rem;
+  color: #b7c5bd;
+  font-size: 0.72rem;
+}
+
+.tech-node.is-unlocked {
+  border-color: #8bb174;
+}
+
+.tech-node.is-unlocked .tech-node__status {
+  color: #a7d58e;
+}
+
+.game-menu__toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 4;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid #e7b85c;
+  border-radius: 0.3rem;
+  color: #1f2933;
+  background: #e7b85c;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.game-menu__screen {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  background: rgba(18, 27, 29, 0.97);
+  overflow-y: auto;
+}
+
+.game-menu__screen[hidden] {
+  display: none !important;
+}
+
+.game-menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 70rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.game-menu__header h2 {
+  margin: 0;
+  color: #e7b85c;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.game-menu__close,
+.game-menu__navigation button,
+.game-menu__technology button {
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(244, 234, 213, 0.3);
+  border-radius: 0.25rem;
+  color: #f4ead5;
+  background: rgba(38, 51, 53, 0.9);
+  cursor: pointer;
+  font: inherit;
+}
+
+.game-menu__navigation {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 70rem;
+  width: 100%;
+  margin: 2rem auto 0;
+  border-bottom: 1px solid rgba(244, 234, 213, 0.2);
+}
+
+.game-menu__navigation button.is-active {
+  border-color: #e7b85c;
+  color: #1f2933;
+  background: #e7b85c;
+}
+
+.game-menu__content {
+  max-width: 70rem;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 2rem;
+}
+
+.game-menu__view {
+  max-width: 48rem;
+}
+
+.game-menu__view h3 {
+  margin: 0 0 1rem;
+  color: #e7b85c;
+  font-size: 1.5rem;
+}
+
+.game-menu__view dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.9rem 2rem;
+  margin: 0 0 2.5rem;
+  max-width: 28rem;
+}
+
+.game-menu__view dt {
+  color: #b7c5bd;
+}
+
+.game-menu__view dd {
+  margin: 0;
+  color: #f4ead5;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.game-menu__view ul {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  color: #f4ead5;
+  list-style: none;
+}
+
+.game-menu__points {
+  margin: -0.5rem 0 1.5rem;
+  color: #b7c5bd;
+}
+
+.game-menu__technologies {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.game-menu__technology {
+  padding: 1rem;
+  border: 1px solid rgba(244, 234, 213, 0.2);
+  border-radius: 0.35rem;
+  background: rgba(38, 51, 53, 0.8);
+}
+
+.game-menu__technology.is-unlocked {
+  border-color: #8bb174;
+}
+
+.game-menu__technology h4 {
+  margin: 0;
+  color: #f4ead5;
+  font-size: 1.1rem;
+}
+
+.game-menu__technology p {
+  margin: 0.35rem 0 0.8rem;
+  color: #b7c5bd;
+}
+
+.game-menu__technology button:disabled {
+  color: #718078;
+  background: rgba(113, 128, 120, 0.18);
+  cursor: not-allowed;
+}
+
+.game-menu__technology span {
+  display: block;
+  margin-top: 0.65rem;
+  color: #b7c5bd;
+  font-size: 0.8rem;
+}
+
+.game-menu__placeholder {
+  max-width: 32rem;
+  padding: 2rem;
+  border: 1px dashed rgba(244, 234, 213, 0.3);
+  color: #b7c5bd;
+}
+
+.game-menu__jobs {
+  display: grid;
+  gap: 0.7rem;
+  max-width: 34rem;
+}
+
+.game-menu__job-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(244, 234, 213, 0.2);
+  border-radius: 0.35rem;
+  background: rgba(38, 51, 53, 0.8);
+}
+
+.game-menu__job-row h4 {
+  margin: 0;
+  color: #f4ead5;
+}
+
+.game-menu__job-row select {
+  min-width: 10rem;
+  padding: 0.45rem;
+  border: 1px solid rgba(244, 234, 213, 0.3);
+  border-radius: 0.25rem;
+  color: #f4ead5;
+  background: #263335;
+  font: inherit;
+}
+
+@media (max-width: 34rem) {
+  .game-menu__navigation {
+    margin-top: 1.25rem;
+  }
+
+  .game-menu__navigation button {
+    flex: 1;
+    padding-inline: 0.4rem;
+  }
 }
