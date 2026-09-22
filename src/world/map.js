@@ -1,21 +1,47 @@
 import { Assets, Container, Graphics, Rectangle, Sprite, Text, TilingSprite } from 'pixi.js';
 
+const createNodes = (prefix, positions, definition) => positions.map(([x, y], index) => ({
+  id: `${prefix}-${index + 1}`,
+  ...definition,
+  x,
+  y,
+}));
+
 const nodeDefinitions = [
-  { id: 'berries-east', activity: 'gather', kind: 'food', label: 'Berry bush', biome: 'Meadow', x: 0.72, y: 0.35, amount: 12, asset: '/img/berry_bush.jpeg' },
-  { id: 'berries-south', activity: 'gather', kind: 'food', label: 'Berry bush', biome: 'Meadow', x: 0.28, y: 0.72, amount: 12, asset: '/img/berry_bush.jpeg' },
-  { id: 'tree-north', activity: 'gather', kind: 'wood', label: 'Tree', biome: 'Forest', x: 0.48, y: 0.18, amount: 8, asset: '/img/tree.jpeg' },
-  { id: 'tree-west', activity: 'gather', kind: 'wood', label: 'Tree', biome: 'Forest', x: 0.12, y: 0.43, amount: 8, asset: '/img/tree.jpeg' },
-  { id: 'deer-east', activity: 'hunt', label: 'Deer', biome: 'Woodland edge', x: 0.84, y: 0.72, amount: 20, discovery: 2, asset: '/img/deer.jpeg' },
-  { id: 'fox-north', activity: 'hunt', label: 'Fox', biome: 'Woodland edge', x: 0.82, y: 0.2, amount: 14, discovery: 2, asset: '/img/fox.jpeg' },
-  { id: 'bear-west', activity: 'hunt', label: 'Bear', biome: 'Forest', x: 0.18, y: 0.22, amount: 35, discovery: 4, asset: '/img/bear.jpeg' },
+  ...createNodes('tree-forest', [
+    [0.05, 0.08], [0.14, 0.12], [0.23, 0.07], [0.32, 0.13], [0.42, 0.08],
+    [0.06, 0.24], [0.16, 0.3], [0.26, 0.23], [0.35, 0.3], [0.44, 0.24],
+    [0.05, 0.42], [0.15, 0.48], [0.25, 0.4], [0.34, 0.47], [0.43, 0.4],
+    [0.08, 0.58], [0.18, 0.64], [0.29, 0.57], [0.38, 0.64], [0.46, 0.56],
+  ], { activity: 'gather', kind: 'wood', label: 'Forest tree', biome: 'Forest', amount: 8, asset: '/img/tree.jpeg' }),
+  ...createNodes('berry-meadow', [
+    [0.08, 0.7], [0.16, 0.78], [0.25, 0.68], [0.34, 0.82], [0.43, 0.72],
+    [0.54, 0.86], [0.63, 0.73], [0.73, 0.84], [0.82, 0.66], [0.92, 0.78],
+    [0.2, 0.9], [0.45, 0.92],
+  ], { activity: 'gather', kind: 'food', label: 'Berry bush', biome: 'Meadow', amount: 12, asset: '/img/berry_bush.jpeg' }),
+  ...createNodes('deer-edge', [[0.68, 0.23], [0.77, 0.3], [0.88, 0.4], [0.7, 0.52]], {
+    activity: 'hunt', label: 'Deer', biome: 'Woodland edge', amount: 20, discovery: 2, asset: '/img/deer.jpeg',
+  }),
+  ...createNodes('fox-edge', [[0.82, 0.12], [0.94, 0.24], [0.74, 0.62]], {
+    activity: 'hunt', label: 'Fox', biome: 'Woodland edge', amount: 14, discovery: 2, asset: '/img/fox.jpeg',
+  }),
+  ...createNodes('bear-forest', [[0.12, 0.18], [0.36, 0.36]], {
+    activity: 'hunt', label: 'Bear', biome: 'Forest', amount: 35, discovery: 4, asset: '/img/bear.jpeg',
+  }),
 ];
 
 const jobStationDefinitions = [
-  { label: 'Well', asset: '/img/well.jpeg', x: 0.62, y: 0.62 },
-  { label: 'Campfire', asset: '/img/campfire.jpeg', x: 0.38, y: 0.58 },
-  { label: 'Storage', asset: '/img/storage_building.jpeg', x: 0.68, y: 0.52 },
-  { label: 'Cattle', asset: '/img/cow.jpeg', x: 0.78, y: 0.82 },
-  { label: 'Pigs', asset: '/img/pig.jpeg', x: 0.88, y: 0.84 },
+  { label: 'Well', asset: '/img/well.jpeg', offsetX: 0.2, offsetY: 0.02 },
+  { label: 'Campfire', asset: '/img/campfire.jpeg', offsetX: -0.2, offsetY: 0.02 },
+  { label: 'Storage', asset: '/img/storage_building.jpeg', offsetX: 0.28, offsetY: -0.16 },
+  { label: 'Cattle', asset: '/img/cow.jpeg', offsetX: 0.3, offsetY: 0.25 },
+  { label: 'Pigs', asset: '/img/pig.jpeg', offsetX: 0.45, offsetY: 0.28 },
+];
+
+const enemyTribeDefinitions = [
+  { id: 'ash-clan', name: 'Ash Clan', x: 0.86, y: 0.08 },
+  { id: 'stone-clan', name: 'Stone Clan', x: 0.9, y: 0.5 },
+  { id: 'marsh-clan', name: 'Marsh Clan', x: 0.08, y: 0.86 },
 ];
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(value, maximum));
@@ -36,19 +62,56 @@ export async function createWorld(app, store) {
   compassArrow.textContent = '▲';
   compass.append(compassLabel, compassArrow);
   document.body.appendChild(compass);
+  const raidAlert = document.createElement('div');
+  raidAlert.className = 'raid-alert';
+  const raidMessage = document.createElement('span');
+  raidMessage.textContent = 'RAID IN PROGRESS';
+  const repelButton = document.createElement('button');
+  repelButton.type = 'button';
+  repelButton.textContent = 'Repel';
+  repelButton.addEventListener('click', () => store.getState().repelRaid());
+  raidAlert.append(raidMessage, repelButton);
+  raidAlert.hidden = true;
+  document.body.appendChild(raidAlert);
+  const minimap = document.createElement('div');
+  minimap.className = 'world-map-panel';
+  minimap.hidden = true;
+  minimap.setAttribute('aria-label', 'World map');
+  const minimapTitle = document.createElement('span');
+  minimapTitle.className = 'world-map-panel__title';
+  minimapTitle.textContent = 'WORLD MAP · PRESS M TO CLOSE';
+  const minimapField = document.createElement('div');
+  minimapField.className = 'world-map-panel__field';
+  const minimapViewport = document.createElement('span');
+  minimapViewport.className = 'world-map-panel__viewport';
+  minimapField.appendChild(minimapViewport);
+  minimap.append(minimapTitle, minimapField);
+  document.body.appendChild(minimap);
+  const minimapMarkers = nodeDefinitions.map((definition) => {
+    const marker = document.createElement('span');
+    marker.className = `world-map-panel__marker ${definition.activity === 'hunt' ? 'is-animal' : 'is-resource'}`;
+    marker.title = definition.label;
+    marker.style.left = `${definition.x * 100}%`;
+    marker.style.top = `${definition.y * 100}%`;
+    minimapField.appendChild(marker);
+    return { definition, marker };
+  });
   const resourceLayer = new Container();
   const farmLayer = new Container();
   const stationLayer = new Container();
+  const enemyLayer = new Container();
   const memberLayer = new Container();
   const memberSprites = [];
-  const pressedKeys = new Set();
+  const mousePosition = { x: 0, y: 0 };
+  const edgeScrollMargin = 48;
+  let hasPointerPosition = false;
   let mapWidth = 0;
   let mapHeight = 0;
   let cameraX = 0;
   let cameraY = 0;
   let explorationLevel = store.getState().explorationLevel;
 
-  world.addChild(background, biomeLayer, biomeLabels, farmLayer, stationLayer, settlement, resourceLayer, memberLayer);
+  world.addChild(background, biomeLayer, biomeLabels, farmLayer, stationLayer, settlement, resourceLayer, enemyLayer, memberLayer);
 
   const farmNodes = Array.from({ length: 6 }, (_, index) => {
     const node = new Container();
@@ -149,6 +212,30 @@ export async function createWorld(app, store) {
 
   const memberTexture = await Assets.load('/img/job_sprite.jpeg');
 
+  const enemyCamps = await Promise.all(enemyTribeDefinitions.map(async (definition) => {
+    const camp = Sprite.from(await Assets.load('/img/house.jpeg'));
+    const label = new Text({
+      text: definition.name,
+      style: { fill: '#ffb3a7', fontSize: 12, stroke: { color: '#32191b', width: 4 } },
+    });
+    label.anchor.set(0.5, 1);
+    label.position.y = -camp.height * 0.55;
+    camp.anchor.set(0.5, 1);
+    camp.tint = 0x9b4a4a;
+    enemyLayer.addChild(camp);
+    enemyLayer.addChild(label);
+    return { definition, camp, label };
+  }));
+  const raiders = Array.from({ length: 3 }, (_, index) => {
+    const raider = Sprite.from(memberTexture);
+    raider.anchor.set(0.5, 1);
+    raider.scale.set(0.65);
+    raider.tint = 0xc34d4d;
+    raider.visible = false;
+    enemyLayer.addChild(raider);
+    return { raider, index };
+  });
+
   const addMemberSprite = (member) => {
     const sprite = new Container();
     const body = Sprite.from(memberTexture);
@@ -195,13 +282,39 @@ export async function createWorld(app, store) {
     }
   };
 
+  const updateEnemies = () => {
+    const { enemyRaid } = store.getState();
+    raidAlert.hidden = !enemyRaid.active;
+    const hasHunter = store.getState().tribeMembers.some((member) => member.job === 'hunter');
+    repelButton.disabled = !hasHunter;
+    repelButton.title = hasHunter ? 'Send hunters to repel the raid' : 'Assign a Hunter first';
+    const raidProgress = enemyRaid.active
+      ? clamp((store.getState().calendar.elapsedSeconds - enemyRaid.startedAt) / 5, 0, 1)
+      : 0;
+    const camp = enemyCamps[0];
+    const startX = camp?.camp.x ?? mapWidth * 0.86;
+    const startY = camp?.camp.y ?? mapHeight * 0.08;
+
+    for (const { raider, index } of raiders) {
+      const isActive = enemyRaid.active && index < enemyRaid.attackers;
+      raider.visible = isActive;
+      if (!isActive) continue;
+      raider.position.set(
+        startX + (settlement.x - startX) * raidProgress + index * 24,
+        startY + (settlement.y - startY) * raidProgress,
+      );
+    }
+  };
+
   const updateCamera = (ticker) => {
     const speed = 420 * (ticker.deltaMS / 1000);
-    if (pressedKeys.has('w')) cameraY -= speed;
-    if (pressedKeys.has('s')) cameraY += speed;
-    if (pressedKeys.has('a')) cameraX -= speed;
-    if (pressedKeys.has('d')) cameraX += speed;
-
+    const menuOpen = document.querySelector('.main-menu, .game-menu__screen:not([hidden]), .world-map-panel:not([hidden])');
+    if (!menuOpen && hasPointerPosition) {
+      if (mousePosition.y <= edgeScrollMargin) cameraY -= speed;
+      if (mousePosition.y >= app.screen.height - edgeScrollMargin) cameraY += speed;
+      if (mousePosition.x <= edgeScrollMargin) cameraX -= speed;
+      if (mousePosition.x >= app.screen.width - edgeScrollMargin) cameraX += speed;
+    }
     cameraX = clamp(cameraX, 0, Math.max(0, mapWidth - app.screen.width));
     cameraY = clamp(cameraY, 0, Math.max(0, mapHeight - app.screen.height));
     world.position.set(-cameraX, -cameraY);
@@ -210,17 +323,33 @@ export async function createWorld(app, store) {
     const directionY = settlement.y - cameraY - app.screen.height / 2;
     const angle = Math.atan2(directionX, -directionY) * (180 / Math.PI);
     compassArrow.style.transform = `rotate(${angle}deg)`;
+    updateMinimap();
   };
 
-  const handleKeydown = (event) => {
-    const key = event.key.toLowerCase();
-    if (!['w', 'a', 's', 'd'].includes(key)) return;
-    event.preventDefault();
-    pressedKeys.add(key);
+  const updateMinimap = () => {
+    minimapViewport.style.left = `${(cameraX / mapWidth) * 100}%`;
+    minimapViewport.style.top = `${(cameraY / mapHeight) * 100}%`;
+    minimapViewport.style.width = `${Math.min(100, (app.screen.width / mapWidth) * 100)}%`;
+    minimapViewport.style.height = `${Math.min(100, (app.screen.height / mapHeight) * 100)}%`;
+    for (const { definition, marker } of minimapMarkers) {
+      marker.hidden = !nodes.some(({ definition: nodeDefinition, node }) =>
+        nodeDefinition.id === definition.id && node.visible,
+      );
+    }
   };
 
-  const handleKeyup = (event) => {
-    pressedKeys.delete(event.key.toLowerCase());
+  const handlePointermove = (event) => {
+    mousePosition.x = event.clientX;
+    mousePosition.y = event.clientY;
+    hasPointerPosition = true;
+  };
+
+  const handleMapKeydown = (event) => {
+    const isTyping = event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLSelectElement;
+    if (isTyping || event.key.toLowerCase() !== 'm' || document.querySelector('.main-menu')) return;
+    minimap.hidden = !minimap.hidden;
   };
 
   const resize = () => {
@@ -270,12 +399,25 @@ export async function createWorld(app, store) {
     }
 
     for (const [index, farmNode] of farmNodes.entries()) {
-      farmNode.node.position.set(mapWidth * 0.42 + (index % 3) * 52, mapHeight * 0.76 + Math.floor(index / 3) * 42);
+      farmNode.node.position.set(
+        mapWidth * 0.5 - width * 0.14 + (index % 3) * 52,
+        mapHeight * 0.58 + height * 0.2 + Math.floor(index / 3) * 42,
+      );
     }
 
     for (const { definition, station } of stations) {
-      station.position.set(mapWidth * definition.x, mapHeight * definition.y);
+      station.position.set(
+        mapWidth * 0.5 + width * definition.offsetX,
+        mapHeight * 0.58 + height * definition.offsetY,
+      );
       station.scale.set(mapScale * 0.7);
+    }
+
+    for (const { definition, camp } of enemyCamps) {
+      camp.position.set(mapWidth * definition.x, mapHeight * definition.y);
+      const campLabel = enemyCamps.find((enemyCamp) => enemyCamp.definition.id === definition.id).label;
+      campLabel.position.set(camp.x, camp.y - camp.height * 0.55);
+      camp.scale.set(mapScale * 0.55);
     }
 
     if (isFirstResize) {
@@ -289,12 +431,13 @@ export async function createWorld(app, store) {
     const directionX = settlement.x - cameraX - width / 2;
     const directionY = settlement.y - cameraY - height / 2;
     compassArrow.style.transform = `rotate(${Math.atan2(directionX, -directionY) * (180 / Math.PI)}deg)`;
+    updateMinimap();
   };
 
   resize();
   window.addEventListener('resize', resize);
-  window.addEventListener('keydown', handleKeydown);
-  window.addEventListener('keyup', handleKeyup);
+  window.addEventListener('pointermove', handlePointermove);
+  window.addEventListener('keydown', handleMapKeydown);
   const unsubscribe = store.subscribe(renderFarms);
   const unsubscribeTechnology = store.subscribe(({ explorationLevel: nextLevel }) => {
     if (nextLevel === explorationLevel) return;
@@ -306,18 +449,21 @@ export async function createWorld(app, store) {
   syncMembers(store.getState());
   app.ticker.add(updateMembers);
   app.ticker.add(updateCamera);
+  app.ticker.add(updateEnemies);
 
   return () => {
     window.removeEventListener('resize', resize);
-    window.removeEventListener('keydown', handleKeydown);
-    window.removeEventListener('keyup', handleKeyup);
-    pressedKeys.clear();
+    window.removeEventListener('pointermove', handlePointermove);
+    window.removeEventListener('keydown', handleMapKeydown);
     compass.remove();
+    raidAlert.remove();
+    minimap.remove();
     unsubscribe();
     unsubscribeTechnology();
     unsubscribeMembers();
     app.ticker.remove(updateMembers);
     app.ticker.remove(updateCamera);
+    app.ticker.remove(updateEnemies);
     world.destroy({ children: true });
   };
 }

@@ -74,6 +74,121 @@ canvas {
   transform-origin: center;
 }
 
+.raid-alert {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 0.7rem 1.25rem;
+  border: 2px solid #ff8f7d;
+  border-radius: 0.3rem;
+  color: #fff0eb;
+  background: rgba(133, 35, 42, 0.92);
+  box-shadow: 0 0 1.5rem rgba(255, 87, 70, 0.5);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  animation: raid-pulse 0.8s ease-in-out infinite alternate;
+}
+
+.raid-alert button {
+  margin-left: 0.8rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #fff0eb;
+  border-radius: 0.2rem;
+  color: #5d2024;
+  background: #fff0eb;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.raid-alert button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.world-map-panel {
+  position: fixed;
+  inset: 4vh 5vw;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid rgba(244, 234, 213, 0.4);
+  border-radius: 0.5rem;
+  background: rgba(22, 31, 35, 0.9);
+  overflow: hidden;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.world-map-panel[hidden] {
+  display: none;
+}
+
+.world-map-panel__title {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #b7c5bd;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.world-map-panel__field {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid rgba(244, 234, 213, 0.25);
+  background: #52734d;
+}
+
+.world-map-panel__field::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(44, 82, 52, 0.75) 0 40%, rgba(156, 126, 75, 0.55) 40% 68%, rgba(139, 157, 105, 0.55) 68%);
+  content: '';
+}
+
+.world-map-panel__marker {
+  position: absolute;
+  z-index: 1;
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.world-map-panel__marker.is-resource {
+  background: #f3d35b;
+  box-shadow: 0 0 0.3rem #f3d35b;
+}
+
+.world-map-panel__marker.is-animal {
+  background: #6db7e8;
+  box-shadow: 0 0 0.3rem #6db7e8;
+}
+
+.world-map-panel__viewport {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid #f4ead5;
+  background: rgba(244, 234, 213, 0.08);
+}
+
+.raid-alert[hidden] {
+  display: none;
+}
+
+@keyframes raid-pulse {
+  from { opacity: 0.72; }
+  to { opacity: 1; }
+}
+
 .main-menu {
   position: fixed;
   inset: 0;
@@ -152,6 +267,33 @@ canvas {
   color: #e7b85c;
   font-size: 1.25rem;
   letter-spacing: 0.04em;
+}
+
+.tribe-stats__name {
+  display: block;
+  pointer-events: auto;
+  padding: 0;
+  border: 0;
+  color: #e7b85c;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.tribe-stats__name-input {
+  pointer-events: auto;
+  width: 100%;
+  padding: 0.15rem 0.25rem;
+  border: 1px solid #e7b85c;
+  border-radius: 0.2rem;
+  color: #f4ead5;
+  background: #263335;
+  font: inherit;
+  font-size: 1.1rem;
 }
 
 .tribe-stats__day {
@@ -261,21 +403,6 @@ canvas {
 
 .tech-node.is-unlocked .tech-node__status {
   color: #a7d58e;
-}
-
-.game-menu__toggle {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 4;
-  padding: 0.65rem 1.1rem;
-  border: 1px solid #e7b85c;
-  border-radius: 0.3rem;
-  color: #1f2933;
-  background: #e7b85c;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
 }
 
 .game-menu__screen {

@@ -11,14 +11,6 @@ export function mountGameMenu(store) {
   const root = document.createElement('div');
   root.className = 'game-menu';
 
-  const toggle = document.createElement('button');
-  toggle.className = 'game-menu__toggle';
-  toggle.type = 'button';
-  toggle.textContent = 'Menu';
-  toggle.setAttribute('aria-expanded', 'false');
-  toggle.setAttribute('aria-controls', 'game-menu-screen');
-  document.body.appendChild(toggle);
-
   const screen = document.createElement('section');
   screen.id = 'game-menu-screen';
   screen.className = 'game-menu__screen';
@@ -161,7 +153,6 @@ export function mountGameMenu(store) {
     screen.hidden = !isOpen;
     screen.setAttribute('aria-hidden', String(!isOpen));
     root.classList.toggle('is-open', isOpen);
-    toggle.setAttribute('aria-expanded', String(isOpen));
   }
 
   const render = ({ resources, calendar, tribeMembers, technologies, explorationLevel }) => {
@@ -203,10 +194,14 @@ export function mountGameMenu(store) {
     }
   };
 
-  toggle.addEventListener('click', () => setOpen(!isOpen));
   close.addEventListener('click', () => setOpen(false));
   const handleKeydown = (event) => {
-    if (event.key === 'Escape') setOpen(false);
+    const isTyping = event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLSelectElement;
+    if (event.key === 'Escape' && !isTyping && !document.querySelector('.main-menu')) {
+      setOpen(!isOpen);
+    }
   };
   document.addEventListener('keydown', handleKeydown);
 
@@ -219,7 +214,6 @@ export function mountGameMenu(store) {
   return () => {
     unsubscribe();
     document.removeEventListener('keydown', handleKeydown);
-    toggle.remove();
     root.remove();
   };
 }

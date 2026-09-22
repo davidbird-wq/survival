@@ -1,4 +1,5 @@
 import { createStore } from 'zustand/vanilla';
+import tribeData from './data/tribeData.json';
 
 const TICK_INTERVAL_MS = 1000;
 const FOOD_DECAY_PER_PERSON_PER_SECOND = 0.1;
@@ -6,6 +7,7 @@ const SAVE_KEY = 'survival-save-v1';
 
 const getSaveData = (state) => ({
   resources: state.resources,
+  tribeName: state.tribeName,
   calendar: state.calendar,
   tribeMembers: state.tribeMembers,
   technologies: state.technologies,
@@ -13,15 +15,28 @@ const getSaveData = (state) => ({
   farmTiles: state.farmTiles,
 });
 
-export const jobDefinitions = {
-  gatherer: { name: 'Gatherer', description: 'Collects Wood from the surrounding forest.', requires: null },
-  farmer: { name: 'Farmer', description: 'Maintains cultivated plots and adds Food.', requires: 'agriculture' },
-  hunter: { name: 'Hunter', description: 'Keeps the tribe supplied with hunted Food.', requires: 'hunting' },
-  waterBearer: { name: 'Water Carrier', description: 'Draws water from the well.', requires: 'fishing' },
-  cook: { name: 'Cook', description: 'Turns the campfire into extra Food.', requires: 'fire' },
-  steward: { name: 'Steward', description: 'Manages the food reserve.', requires: 'storage' },
-  herder: { name: 'Herdskeeper', description: 'Raises pigs and cows near camp.', requires: 'animalHusbandry' },
+export const jobDefinitions = Object.fromEntries(
+  tribeData.jobs.map(({ id, name, description, requires }) => [id, { name, description, requires }]),
+);
+
+const canStartJob = (jobId, technologies) => {
+  const job = jobDefinitions[jobId];
+  return Boolean(job && (!job.requires || technologies[job.requires]));
 };
+
+const createMember = (index, technologies) => {
+  const profile = tribeData.members[index % tribeData.members.length];
+  const job = canStartJob(profile.preferredJob, technologies) ? profile.preferredJob : null;
+  return {
+    id: `member-${index + 1}`,
+    name: profile.name,
+    task: job || 'idle',
+    job,
+    targetId: null,
+  };
+};
+
+const initialTechnologies = { fire: false, toolmaking: false, agriculture: false };
 
 export const tribeStore = createStore((set, get) => ({
   resources: {
@@ -30,26 +45,24 @@ export const tribeStore = createStore((set, get) => ({
     population: 5,
     discoveryPoints: 0,
   },
+  tribeName: 'Tribe',
   calendar: {
     day: 1,
     elapsedSeconds: 0,
   },
-  tribeMembers: [
-    { id: 'member-1', name: 'Aru', task: 'idle', job: null, targetId: null },
-    { id: 'member-2', name: 'Nami', task: 'idle', job: null, targetId: null },
-    { id: 'member-3', name: 'Toma', task: 'idle', job: null, targetId: null },
-  ],
-  technologies: {
-    fire: false,
-    toolmaking: false,
-    agriculture: false,
-  },
+  tribeMembers: Array.from({ length: 3 }, (_, index) => createMember(index, initialTechnologies)),
+  technologies: initialTechnologies,
   explorationLevel: 0,
   farmTiles: Array.from({ length: 6 }, (_, index) => ({
     id: `farm-${index + 1}`,
     state: 'Empty',
     elapsedSeconds: 0,
   })),
+  enemyRaid: {
+    active: false,
+    startedAt: 0,
+    attackers: 0,
+  },
   isRunning: false,
   tickTimer: null,
 
@@ -60,6 +73,12 @@ export const tribeStore = createStore((set, get) => ({
         [resource]: Math.max(0, state.resources[resource] + amount),
       },
     })),
+
+  setTribeName: (name) =>
+    set((state) => {
+      const tribeName = name.trim().slice(0, 24);
+      return tribeName ? { tribeName } : state;
+    }),
 
   gather: (resource, amount) =>
     set((state) => ({
@@ -115,6 +134,13 @@ export const tribeStore = createStore((set, get) => ({
       ),
     })),
 
+  repelRaid: () =>
+    set((state) => {
+      const hasHunter = state.tribeMembers.some((member) => member.job === 'hunter');
+      if (!state.enemyRaid.active || !hasHunter) return state;
+      return { enemyRaid: { active: false, startedAt: 0, attackers: 0 } };
+    }),
+
   plantTile: (tileId) =>
     set((state) => {
       if (!state.technologies.agriculture) return state;
@@ -156,12 +182,20 @@ export const tribeStore = createStore((set, get) => ({
       if (!saved || !saved.resources || !saved.calendar) return;
 
       set((state) => ({
-        resources: { ...state.resources, ...saved.resources },
+        resources: {
+          ...state.resources,
+          ...saved.resources,
+          population: Math.max(3, Number(saved.resources.population) || 5),
+        },
+        tribeName: typeof saved.tribeName === 'string' && saved.tribeName.trim()
+          ? saved.tribeName.trim().slice(0, 24)
+          : state.tribeName,
         calendar: { ...state.calendar, ...saved.calendar },
         tribeMembers: Array.isArray(saved.tribeMembers) ? saved.tribeMembers : state.tribeMembers,
         technologies: { ...state.technologies, ...saved.technologies },
         explorationLevel: saved.explorationLevel || 0,
         farmTiles: Array.isArray(saved.farmTiles) ? saved.farmTiles : state.farmTiles,
+        enemyRaid: { active: false, startedAt: 0, attackers: 0 },
       }));
     } catch {
       localStorage.removeItem(SAVE_KEY);
@@ -172,12 +206,9 @@ export const tribeStore = createStore((set, get) => ({
     localStorage.removeItem(SAVE_KEY);
     set({
       resources: { food: 100, wood: 0, population: 5, discoveryPoints: 0 },
+      tribeName: 'Tribe',
       calendar: { day: 1, elapsedSeconds: 0 },
-      tribeMembers: [
-        { id: 'member-1', name: 'Aru', task: 'idle', job: null, targetId: null },
-        { id: 'member-2', name: 'Nami', task: 'idle', job: null, targetId: null },
-        { id: 'member-3', name: 'Toma', task: 'idle', job: null, targetId: null },
-      ],
+      tribeMembers: Array.from({ length: 3 }, (_, index) => createMember(index, initialTechnologies)),
       technologies: Object.fromEntries(Object.keys(technologyDefinitions).map((id) => [id, false])),
       explorationLevel: 0,
       farmTiles: Array.from({ length: 6 }, (_, index) => ({
@@ -185,6 +216,7 @@ export const tribeStore = createStore((set, get) => ({
         state: 'Empty',
         elapsedSeconds: 0,
       })),
+      enemyRaid: { active: false, startedAt: 0, attackers: 0 },
     });
   },
 
@@ -264,24 +296,32 @@ export const tribeStore = createStore((set, get) => ({
 
         const newPeople = day > state.calendar.day && day % 10 === 0
           ? Array.from({ length: 2 }, (_, index) => ({
-            id: `member-${state.tribeMembers.length + index + 1}`,
-            name: `Settler ${state.tribeMembers.length + index + 1}`,
-            task: 'idle',
-            job: null,
-            targetId: null,
+            ...createMember(state.tribeMembers.length + index, state.technologies),
           }))
           : [];
+        const raidEnded = state.enemyRaid.active && elapsedSeconds - state.enemyRaid.startedAt >= 10;
+        const raidStarts = !state.enemyRaid.active && elapsedSeconds > 0 && elapsedSeconds % 30 === 0;
+        const attackers = Math.min(3, Math.max(1, state.resources.population));
+        const enemyRaid = raidStarts
+          ? { active: true, startedAt: elapsedSeconds, attackers }
+          : raidEnded
+            ? { active: false, startedAt: 0, attackers: 0 }
+            : state.enemyRaid;
+        const raidFoodLoss = raidStarts ? 15 : 0;
+        const hasDefenders = state.tribeMembers.some((member) => member.job === 'hunter');
+        const raidPopulationLoss = raidStarts && !hasDefenders && state.resources.population > 3 ? 1 : 0;
 
         return {
           resources: {
             ...state.resources,
-            food: food + jobFood + harvestedFood + hunters * 3,
+            food: Math.max(0, food + jobFood + harvestedFood + hunters * 3 - raidFoodLoss),
             wood: state.resources.wood + jobWood,
-            population: state.resources.population + newPeople.length,
+            population: Math.max(3, state.resources.population + newPeople.length - raidPopulationLoss),
           },
           calendar: { day, elapsedSeconds },
           farmTiles: updatedFarmTiles,
           tribeMembers: [...state.tribeMembers, ...newPeople],
+          enemyRaid,
         };
       });
       if (get().calendar.elapsedSeconds % 10 === 0) get().saveGame();
@@ -376,6 +416,12 @@ export const technologyDefinitions = {
     cost: 15,
     prerequisites: ['masonry', 'pottery'],
   },
+  ...Object.fromEntries(
+    tribeData.upgrades.map(({ id, name, description, cost, prerequisites }) => [
+      id,
+      { name, description, cost, prerequisites },
+    ]),
+  ),
 };
 
 export const getTechnologyCost = (technologyId, state) => {

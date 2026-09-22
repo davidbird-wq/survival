@@ -10,9 +10,40 @@ export function mountTribeStats(store) {
   panel.className = 'tribe-stats';
   panel.setAttribute('aria-label', 'Tribe statistics');
 
-  const heading = document.createElement('h1');
-  heading.textContent = 'Tribe';
+  const heading = document.createElement('button');
+  heading.className = 'tribe-stats__name';
+  heading.type = 'button';
+  heading.title = 'Rename tribe';
+  heading.setAttribute('aria-label', 'Rename tribe');
   panel.appendChild(heading);
+
+  const editName = () => {
+    const input = document.createElement('input');
+    input.className = 'tribe-stats__name-input';
+    input.type = 'text';
+    input.maxLength = 24;
+    input.value = store.getState().tribeName;
+    heading.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const saveName = () => {
+      store.getState().setTribeName(input.value);
+      input.replaceWith(heading);
+    };
+    input.addEventListener('blur', saveName, { once: true });
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.stopPropagation();
+        input.blur();
+      }
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        input.replaceWith(heading);
+      }
+    });
+  };
+  heading.addEventListener('click', editName);
 
   const day = document.createElement('p');
   day.className = 'tribe-stats__day';
@@ -32,7 +63,8 @@ export function mountTribeStats(store) {
   panel.appendChild(list);
   document.body.appendChild(panel);
 
-  const render = ({ resources, calendar }) => {
+  const render = ({ resources, calendar, tribeName }) => {
+    heading.textContent = tribeName;
     day.textContent = `Day ${calendar.day}`;
 
     for (const [resource, value] of values) {
